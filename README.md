@@ -48,7 +48,7 @@ O **Acessly Monitor** oferece:
 - ✅ **Histórico de dados**: gráficos para análise temporal  
 - ✅ **Transparência total**: dados públicos sobre acessibilidade do ambiente 
 
-![Acessly_Monitor](https://drive.google.com/uc?export=view&id=1jXGaZ2s30W61gtRwhKozCgcC3x7wt_lr)
+![Acessly_Monitor](https://drive.google.com/uc?export=view&id=1Bbm7sZHrGnvmo-l9ruscbuSocPdGv-i8)
 
 ### 🏗️ Arquitetura do sistema
 
@@ -246,9 +246,9 @@ Abra o navegador em `http:localhost:1880`
 
   - Dê dois cliques no node "MQTT Acessly" (roxo)
   - Verifique se o servidor está configurado como:
-        - Server: `broker.hivemq.com`
-        - Port: `1883`
-        - Topic: /acessly/empresa/001/data
+      - Server: `broker.hivemq.com`
+      - Port: `1883`
+      - Topic: /acessly/empresa/001/data
   - Clique em **Done**
 
 3.5. Deploy
