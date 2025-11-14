@@ -4,7 +4,7 @@
 #include <ArduinoJson.h>         //biblioteca para monstar e manipular estruturas JSON
 #include <DHTesp.h>              //biblioteca para sensor de temperatura e umidade (DHT22)
 #include <LiquidCrystal_I2C.h>   //biblioteca para display LCD via I2C
-#include <Wire.h>  
+#include <Wire.h>                //biblioteca para comunicação I2C
 
 #define WIFI_SSID "Wokwi-GUEST"             //nome da rede WiFi simulada no Wokwi
 #define WIFI_PASSWORD ""                    //sem senha na rede do Wokwi
@@ -47,15 +47,24 @@ const float MIN_TEMP = 20.0;
 const float MAX_TEMP = 24.0;
 
 const int MQTT_BUFFER_SIZE = 1024;  //aumenta buffer para 1KB
+unsigned long lastWiFiCheck = 0;    //timestamp da última verificação WiFi
+const unsigned long WIFI_CHECK_INTERVAL = 30000;  
+
+void connectWiFi();
+void connectMQTT();
+void readSensors();
+void calculateAccessibilityScore();
+void updateIndicators();
+void publishData();  
 
 void setup() {
   Serial.begin(115200);
   delay(1000);
-  
+
   Serial.println("\n\n================================");
-  Serial.println("   ACESSLY MONITOR - ESP32");
+  Serial.println(" ACESSLY MONITOR - ESP32");
   Serial.println("================================");
-  
+
   Serial.println("[1/5] Inicializando hardware...");
   dht.setup(DHT_PIN, DHTesp::DHT22);
   pinMode(BUTTON_PIN, INPUT_PULLUP);
@@ -64,7 +73,7 @@ void setup() {
   pinMode(LED_RED, OUTPUT);
 
   Serial.println("[2/5] Inicializando LCD...");
-  Wire.begin(LCD_SDA, LCD_SCL);  // ← ESSENCIAL!
+  Wire.begin(LCD_SDA, LCD_SCL);
   lcd.init();
   lcd.backlight();
   lcd.setCursor(0, 0);
@@ -74,50 +83,62 @@ void setup() {
 
   Serial.println("[3/5] Conectando WiFi...");
   connectWiFi();
-  
+
   Serial.println("[4/5] Configurando MQTT...");
   mqtt.setBufferSize(MQTT_BUFFER_SIZE);
   mqtt.setServer(MQTT_SERVER, MQTT_PORT);
-  
+
   Serial.println("[4.5/5] Conectando ao broker MQTT...");
   delay(1000);
   connectMQTT();
-  
+
   Serial.println("[5/5] Setup completo!");
   Serial.println("================================\n");
-  
+
   delay(2000);
   lcd.clear();
 }
 
 void loop() {
 
-  //Verifica e reconecta WiFi se necessário
+  unsigned long currentMillis = millis();
+  
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("WiFi desconectado! Reconectando...");
-    connectWiFi();
+    if (currentMillis - lastWiFiCheck >= WIFI_CHECK_INTERVAL) {
+      Serial.println("\nWiFi desconectado! Tentando reconectar...");
+      connectWiFi();
+      lastWiFiCheck = currentMillis;
+    } else {
+      Serial.print(".");
+      delay(1000);
+      return;
+    }
   }
   
-  //Verifica e conecta MQTT se necessário
   if (!mqtt.connected()) {
     Serial.println("MQTT desconectado! Conectando...");
     connectMQTT();
   }
   
-  mqtt.loop();  //mantém cliente MQTT ativo
+  mqtt.loop();
 
-  //Ciclo de monitoramento
-  readSensors();                     //faz leitura dos sensores
-  calculateAccessibilityScore();     //calcula score conforme limites
-  updateIndicators();                //atualiza LEDs e LCD conforme score/status
-  publishData();                     //monta JSON e publica no MQTT
+  if (WiFi.status() == WL_CONNECTED) {
+    readSensors();
+    calculateAccessibilityScore();
+    updateIndicators();
+    publishData();
+  }
   
-  delay(5000);  //aguarda 5s até próxima leitura
+  delay(5000);
 }
 
-//Conecta na rede WiFi, mostrando progresso no LCD
 void connectWiFi() {
   Serial.println("Iniciando conexao WiFi...");
+  
+  //Limpa LCD e mostra status
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Acessly Monitor");
   lcd.setCursor(0, 1);
   lcd.print("WiFi Connect...");
   
@@ -132,11 +153,22 @@ void connectWiFi() {
   //Inicia conexão
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   
-  //Aguarda conexão com timeout de 15 segundos
+  //Aguarda conexão com timeout de 15 segundos (30 tentativas x 500ms)
   int tentativas = 0;
   while (WiFi.status() != WL_CONNECTED && tentativas < 30) {
     delay(500);
     Serial.print(".");
+    
+    //Atualiza LCD a cada 4 tentativas (2 segundos)
+    if (tentativas % 4 == 0) {
+      lcd.setCursor(0, 1);
+      lcd.print("Conectando");
+      for (int i = 0; i < (tentativas / 4) % 4; i++) {
+        lcd.print(".");
+      }
+      lcd.print("   "); //limpa caracteres extras
+    }
+    
     tentativas++;
   }
   Serial.println();
@@ -153,6 +185,8 @@ void connectWiFi() {
     lcd.print("WiFi OK");
     lcd.setCursor(0, 1);
     lcd.print(WiFi.localIP());
+    delay(2000); //Mostra o IP por 2 segundos
+    
   } else {
     Serial.println("ERRO: WiFi nao conectou!");
     Serial.print("Status WiFi: ");
@@ -161,7 +195,12 @@ void connectWiFi() {
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("WiFi ERRO");
-    delay(5000);
+    lcd.setCursor(0, 1);
+    lcd.print("Tentando...");
+    
+    //CRÍTICO: Aguarda 10 segundos antes de permitir nova tentativa
+    //Isso evita loop infinito de tentativas
+    delay(10000);
   }
 }
 
