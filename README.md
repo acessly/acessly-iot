@@ -238,7 +238,7 @@ Abra o navegador em `http:localhost:1880`
 
   - Selecione Import → Clipboard
 
-  - Cole o conteúdo do arquivo flows.json
+  - Cole o conteúdo do arquivo *acessly-flows*
 
   - Clique em Import
 
