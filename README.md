@@ -320,6 +320,6 @@ Você verá o dashboard com:
 
 ## 📹 Vídeo de Apresentação
 
-> 🎬 Clique na imagem abaixo para assistir no YouTube
+> 🎬 Clique no link abaixo para assistir no YouTube
 
-[![Assista ao vídeo](https://img.youtube.com/vi/UewdXhF_TZ8/maxresdefault.jpg)]()
+[Assista ao vídeo](https://youtu.be/W48yTMoXgp8?si=qpF9JUXPkPZzVono)
