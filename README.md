@@ -80,8 +80,9 @@ Criar Tabela DB → SQL - Criar Tabela → Acessly DB → Debug DB ✅
 1. ESP32 coleta dados dos sensores (temperatura, luz, ruído, obstrução)
 2. Calcula o **Score de Acessibilidade** baseado em limiares pré-definidas
 3. Publica dados via **MQTT** no broker público `broker.hivemq.com`
-4. Node-RED recebe, processa e exibe os dados no dashboard
+4. Node-RED recebe, processa, armazena no **banco SQLite** e exibe os dados no dashboard
 5. Dashboard atualiza em **tempo real** (a cada 5 segundos)
+6. Usuário pode enviar **feedback** pelo dashboard, que também é salvo no banco
 
 ## ⚙️ Componentes de hardware
 
@@ -124,12 +125,14 @@ Segue abaixo a lista de componentes (Simulação Wokwi)
     - `LiquidCrystal_I2C.h` - display LCD
     - `Wire.h` - comunicação I2C
 
-- Gateway e Dashboard
+- Gateway, Dashboard e Banco de Dados
   
     - Plataforma: Node-RED
-    - Protocolo: MQTT (broquer.hivemq.com:1883)
+    - Protocolo: MQTT (`broquer.hivemq.com:1883`)
     - Visualização: node-red-dashboard
+    - Armazenamento: **node-red-node-sqlite** (banco de dados local SQLite)
     - Formato de dados: JSON
+    - Interação de **feedback do usuário** no banco via dashboard
  
 ## 🪢 Fluxo Node-RED
 
