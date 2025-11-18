@@ -314,3 +314,9 @@ Você verá o dashboard com:
   - ✅ Cards de Sensores (temperatura, luz, ruído)
 
   - ✅ Gráfico temporal com histórico
+
+## 📹 Vídeo de Apresentação
+
+> 🎬 Clique na imagem abaixo para assistir no YouTube
+
+[![Assista ao vídeo](https://img.youtube.com/vi/UewdXhF_TZ8/maxresdefault.jpg)]()
