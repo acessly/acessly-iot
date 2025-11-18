@@ -228,7 +228,7 @@ npm install node-red-dashboard
 
 Após instalar, reinicie o Node-RED e acesse a interface para adicionar esses nodes ao seu fluxo.
 
-## 🛞 Configuração e instalação
+## 🛞 Configuração, instalação e testes
 
 ### Pré-requisitos
   - Wokwi
@@ -285,7 +285,7 @@ Abra o navegador em `http:localhost:1880`
 
   - Selecione Import → Clipboard
 
-  - Cole o conteúdo do arquivo *acessly-flows*
+  - Cole o conteúdo do arquivo *fluxo-nodered*
 
   - Clique em Import
 
