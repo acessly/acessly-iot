@@ -48,28 +48,31 @@ O **Acessly Monitor** oferece:
 - ✅ **Histórico de dados**: gráficos para análise temporal  
 - ✅ **Transparência total**: dados públicos sobre acessibilidade do ambiente 
 
-![Acessly_Monitor](https://drive.google.com/uc?export=view&id=1Bbm7sZHrGnvmo-l9ruscbuSocPdGv-i8)
+![Acessly_Monitor](https://drive.google.com/uc?export=view&id=1M2jloQh6ZT0qlVAXOX3nDqED1rS9td0P)
 
 ### 🏗️ Arquitetura do sistema
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      ARQUITETURA IoT                        │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                        FLUXO COMPLETO                        │
+└──────────────────────────────────────────────────────────────┘
 
-   ┌──────────────┐      MQTT        ┌──────────────┐
-   │   ESP32      │   (JSON a cada   │   Node-RED   │
-   │  + Sensores  │────► 5 segundos) │   (Gateway)  │
-   │   (Wokwi)    │                  │              │
-   └──────────────┘                  └──────┬───────┘
-         │                                  │
-         │                                  │ HTTP
-         ▼                                  ▼
-   ┌──────────────┐                  ┌──────────────┐
-   │   Display    │                  │   Dashboard  │
-   │   LCD 16x2   │                  │     Web      │
-   │   + LEDs     │                  │              │
-   └──────────────┘                  └──────────────┘
+PARTE 1: Dashboard (Tempo Real)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MQTT → json ──→ Separar Dados ─┬→ Score ✅
+                               ├→ Gráfico ✅
+                               ├→ Status ✅
+                               ├→ Cards ✅
+                               └→ Detectar Problemas → Notificação ✅
+
+PARTE 2: Persistência de Dados (Banco)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+json ──→ Preparar SQL ──→ Acessly DB ──→ Debug DB ✅
+
+PARTE 3: Inicialização
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Criar Tabela DB → SQL - Criar Tabela → Acessly DB → Debug DB ✅
+
 ```
 
 ## 🗣️ Fluxo de comunicação
@@ -130,20 +133,39 @@ Segue abaixo a lista de componentes (Simulação Wokwi)
  
 ## 🪢 Fluxo Node-RED
 
-![Acessly_Fluxo](https://drive.google.com/uc?export=view&id=1-uMNRWz_qEYX5tHRyhVUAAjyPjnRI72J)
+![Acessly_Fluxo](https://drive.google.com/uc?export=view&id=1OuWx65dJshUNsxnJI5o5_gtYq7zscikX)
 
 ### Descrição dos nodes
 
-| Node                       | Tipo        | Função                                             |
-| -------------------------- | ----------- | -------------------------------------------------- |
-| MQTT Acessly               | mqtt-in     | Recebe dados do broker HiveMQ                      |
-| json                       | json        | Converte string JSON em objeto                     |
-| Separar Dados              | function    | Divide dados em 3 saídas (score, sensores, status) |
-| Score de Acessibilidade    | gauge       | Exibe gauge visual com cores                       |
-| Status                     | template    | Exibe badge de status                              |
-| Preparar Séries do Gráfico | function    | Formata dados para o gráfico                       |
-| Gráfico Sensores Ambientais          | chart       | Exibe linhas temporais                   |
-| Cards                      | template    | Exibe 3 cards com valores dos sensores             |
+| Node                        | Tipo          | Função                                                                  |
+| --------------------------- | ------------- | ----------------------------------------------------------------------- |
+| Header                      | template      | Cabeçalho visual do dashboard                                           |
+| Ambiente                    | template      | Título/seção ambiente                                                   |
+| Recepção De Dados MQTT      | comment       | Informação de explicação de entrada MQTT                                |
+| MQTT Acessly                | mqtt-in       | Recebe dados do broker HiveMQ                                           |
+| json                        | json          | Converte string JSON em objeto                                          |
+| Separar Dados               | function      | Divide dados recebidos em componentes para ambiente, score, sensores... |
+| Score de Acessibilidade     | gauge         | Exibe gauge visual do score                                             |
+| Preparar Séries do Gráfico  | function      | Formata dados para o gráfico                                            |
+| Gráfico Sensores Ambientais | chart         | Exibe linhas temporais dos sensores                                     |
+| Status                      | template      | Exibe badge de status ambiental                                         |
+| Cards                       | template      | Exibe três cards com valores dos sensores                               |
+| Detectar Problemas          | function      | Analisa dados e identifica condições críticas de acessibilidade         |
+| Mostrar Notificação         | notification  | Exibe alerta/aviso no dashboard de problemas detectados                 |
+| Preparar SQL                | function      | Prepara comando SQL para salvar leitura no banco                        |
+| Acessly DB                  | sqlite        | Insere os dados no banco SQLite                                         |
+| Debug MQTT                  | debug         | Visualiza dados recebidos via MQTT                                      |
+| Debug DB                    | debug         | Visualiza retornos das operações no banco                               |
+| Criar Tabela                | inject        | Dispara criação de tabela principal                                     |
+| Criar Tabela SQL            | function      | Comando SQL para estruturação inicial do banco                          |
+| Ver Todos os Dados          | inject        | Dispara consulta de todos os dados no banco                             |
+| SQL - SELECT ALL            | function      | Prepara comando para seleção geral do banco                             |
+| Criar Tabela Feedback       | inject        | Cria tabela para registrar feedback dos usuários                        |
+| Criar Tabela Feedback (SQL) | function      | Comando SQL para estruturar tabela feedback                             |
+| Comentário do Usuário       | ui_text_input | Campo para o usuário enviar seus comentários/feedback                   |
+| Preparar Comentário         | function      | Prepara SQL para inserir comentário no banco                            |
+| Salvar Comentário DB        | sqlite        | Insere comentário no banco                                              |
+| Debug Comentário DB         | debug         | Visualiza inserção dos comentários                                      |
 
 ## 📊 Fluxos de dados
 
@@ -180,6 +202,28 @@ Acesso
 ```
 http://localhost:1880/ui
 ```
+
+## 🎢 Instalação dos nodes necessários
+
+Para que o fluxo funcione corretamente, é necessário instalar os seguintes nodes adicionais no Node-RED:
+
+1. `node-red-node-sqlite`
+Este node permite integrar o Node-RED com bancos de dados SQLite para armazenamento e consulta de dados.
+
+```bash
+cd ~/.node-red
+npm install node-red-node-sqlite
+```
+
+2. `node-red-dashboard`
+Este node adiciona componentes de interface gráfica (gauges, gráficos, cards, campos de texto etc.) para criar dashboards interativos.
+
+```bash
+cd ~/.node-red
+npm install node-red-dashboard
+```
+
+Após instalar, reinicie o Node-RED e acesse a interface para adicionar esses nodes ao seu fluxo.
 
 ## 🛞 Configuração e instalação
 
